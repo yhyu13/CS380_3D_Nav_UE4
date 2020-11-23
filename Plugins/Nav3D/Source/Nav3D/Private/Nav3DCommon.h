@@ -12,13 +12,3 @@ Creation date: 11/14/2020
 #pragma once
 
 #include "CoreMinimal.h"
-
-/**
- *
- */
-class Nav3DCommon
-{
-public:
-	Nav3DCommon();
-	~Nav3DCommon();
-};

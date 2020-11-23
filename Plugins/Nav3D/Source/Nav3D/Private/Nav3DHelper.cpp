@@ -10,11 +10,3 @@ Creation date: 11/14/2020
 - End Header ----------------------------*/
 
 #include "Nav3DHelper.h"
-
-Nav3DHelper::Nav3DHelper()
-{
-}
-
-Nav3DHelper::~Nav3DHelper()
-{
-}

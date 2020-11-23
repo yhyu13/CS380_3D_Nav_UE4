@@ -10,11 +10,3 @@ Creation date: 11/14/2020
 - End Header ----------------------------*/
 
 #include "Nav3DCommon.h"
-
-Nav3DCommon::Nav3DCommon()
-{
-}
-
-Nav3DCommon::~Nav3DCommon()
-{
-}
