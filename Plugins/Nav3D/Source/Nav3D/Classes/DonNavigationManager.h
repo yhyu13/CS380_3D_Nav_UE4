@@ -68,6 +68,16 @@ struct FDonNavigationVoxel
 	}
 	
 	void BroadcastCollisionUpdates();
+
+	static float DistanceL2(const FDonNavigationVoxel& A, const FDonNavigationVoxel& B)
+	{
+		return sqrtf((A.X - B.X)*(A.X - B.X) + (A.Y - B.Y)*(A.Y - B.Y) + (A.Z - B.Z)*(A.Z - B.Z));
+	}
+
+	static float DistanceL1(const FDonNavigationVoxel& A, const FDonNavigationVoxel& B)
+	{
+		return fabs(A.X - B.X) + fabs(A.Y - B.Y) + fabs(A.Z - B.Z);
+	}
 	
 	friend bool operator== (const FDonNavigationVoxel& A, const FDonNavigationVoxel& B)
 	{
@@ -153,7 +163,7 @@ struct FDonNavVoxelY
 	UPROPERTY()
 	TArray<FDonNavigationVoxel> Z;	
 
-	void AddZ(FDonNavigationVoxel volume)
+	void AddZ(const FDonNavigationVoxel& volume)
 	{
 		Z.Add(volume);
 	}
@@ -171,7 +181,7 @@ struct FDonNavVoxelX
 	UPROPERTY()
 	TArray<FDonNavVoxelY> Y;	
 
-	void AddY(FDonNavVoxelY YPlaneVolume)
+	void AddY(const FDonNavVoxelY& YPlaneVolume)
 	{
 		Y.Add(YPlaneVolume);
 	}
@@ -189,16 +199,16 @@ struct FDonNavVoxelXYZ
 	UPROPERTY()
 	TArray<FDonNavVoxelX> X;	
 
-	void AddX(FDonNavVoxelX XPlaneVolume)
+	void AddX(const FDonNavVoxelX& XPlaneVolume)
 	{
 		X.Add(XPlaneVolume);
 	}
 
 	void ClearAll()
 	{
-		for (FDonNavVoxelX _x : X)
+		for (FDonNavVoxelX& _x : X)
 		{
-			for (FDonNavVoxelY _y : _x.Y)
+			for (FDonNavVoxelY& _y : _x.Y)
 				_y.Z.Empty();
 
 			_x.Y.Empty();

@@ -23,7 +23,8 @@ DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ PathfindingSolver"),            STAT_Pa
 DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ DynamicCollisionUpdates"),  STAT_DynamicCollisionUpdates, STATGROUP_DonNavigation);
 DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ DynamicCollisionSampling"), STAT_DynamicCollisionSampling, STATGROUP_DonNavigation);
 
-#define DEBUG_DoNAI_THREADS 0
+#define DEBUG_DoNAI_THREADS 1
+#define THETA_STAR 1
 
 void FDonNavigationVoxel::BroadcastCollisionUpdates()
 {
@@ -1885,15 +1886,41 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 	if (!CanNavigateByCollisionProfile(Neighbor, Task.Data.VoxelCollisionProfile))
 		return;
 
+	auto current = Current;
+#if THETA_STAR == 1
+	// Theta* algorithm 
+	// Get parent of Current
+	auto value = Task.Data.VolumeVsGoalTrajectoryMap.Find(Current);
+	if (value)
+	{
+		auto Parent_of_Current = *value;
+		if (Parent_of_Current)
+		{
+			const auto& Actor = Task.Data.Actor;
+			UPrimitiveComponent* CollisionComponent = Actor.Get() ? Cast<UPrimitiveComponent>(Actor->GetRootComponent()) : NULL;
+			// Do we have direct access from parent of current to neighbour?
+			FHitResult hitResult;
+			const bool bFindInitialOverlaps = true;
+			const auto& Origin = Parent_of_Current->Location;
+			const auto& Destination = Neighbor->Location;
+			if (IsDirectPathLineSweep(CollisionComponent, Origin, Destination, hitResult, bFindInitialOverlaps))
+			{
+				// Replace Current with parent of Current by the line of sight test 
+				current = Parent_of_Current;
+			}
+		}
+	}
+#endif // THETA_STAR
+
 	// In reality there are two possible segment distances: side and sqrt(2) * side. As a trade-off between accuracy and performance we're assuming all segments to be only equal to the pixel size (majority case are 6-DOF neighbors)
-	float SegmentDist = VoxelSize;
-	
-	uint32 newCost = *Task.Data.VolumeVsCostMap.Find(Current) + SegmentDist;
+	float SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*current, *Neighbor);
+
+	uint32 newCost = *Task.Data.VolumeVsCostMap.Find(current) + SegmentDist;
 	uint32* volumeCost = Task.Data.VolumeVsCostMap.Find(Neighbor);
 
 	if (!volumeCost || newCost < *volumeCost)
-	{	
-		Task.Data.VolumeVsGoalTrajectoryMap.Add(Neighbor, Current);
+	{
+		Task.Data.VolumeVsGoalTrajectoryMap.Add(Neighbor, current);
 		Task.Data.VolumeVsCostMap.Add(Neighbor, newCost);
 
 		float heuristic = FVector::Dist(Neighbor->Location, Task.Data.Destination);
@@ -2257,7 +2284,8 @@ void ADonNavigationManager::ReceiveAsyncNavigationTasks()
 			AbortPathfindingTask_Internal(newlyArrivedTask.Data.Actor.Get());
 
 #if DEBUG_DoNAI_THREADS
-			UE_LOG(DoNNavigationLog, Display, TEXT("[%s] [async thread] Received new abort request"), actor ? *actor->GetName() : *FString("Unknown"));
+			auto owner = newlyArrivedTask.Data.Actor.Get();
+			UE_LOG(DoNNavigationLog, Display, TEXT("[%s] [async thread] Received new abort request"), owner ? *owner->GetName() : *FString("Unknown"));
 #endif //DEBUG_DoNAI_THREADS*/
 		}
 	}
