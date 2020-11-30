@@ -1896,11 +1896,10 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 		auto Parent_of_Current = *value;
 		if (Parent_of_Current)
 		{
-			const auto& Actor = Task.Data.Actor;
-			UPrimitiveComponent* CollisionComponent = Actor.Get() ? Cast<UPrimitiveComponent>(Actor->GetRootComponent()) : NULL;
 			// Do we have direct access from parent of current to neighbour?
 			FHitResult hitResult;
 			const bool bFindInitialOverlaps = true;
+			auto CollisionComponent = Task.Data.CollisionComponent.Get();
 			const auto& Origin = Parent_of_Current->Location;
 			const auto& Destination = Neighbor->Location;
 			if (IsDirectPathLineSweep(CollisionComponent, Origin, Destination, hitResult, bFindInitialOverlaps))
