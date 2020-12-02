@@ -394,7 +394,8 @@ struct FDoNNavigationQueryData
 	FDonNavigationVoxel* OriginVolume;
 	FDonNavigationVoxel* DestinationVolume;	
 
-	DoNNavigation::PriorityQueue<FDonNavigationVoxel*> Frontier;	
+	DoNNavigation::PriorityQueue<FDonNavigationVoxel*> Frontier;
+	TSet<FDonNavigationVoxel*> VolumeClosedList;
 	TMap<FDonNavigationVoxel*, uint32> VolumeVsCostMap;
 	TMap<FDonNavigationVoxel*, FDonNavigationVoxel*> VolumeVsGoalTrajectoryMap;
 
@@ -1220,6 +1221,11 @@ private:
 	void ExpandFrontierTowardsTarget(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current, FDonNavigationVoxel* Neighbor);
 	void PackageRawSolution(FDonNavigationQueryTask& task);
 	void PackageDirectSolution(FDonNavigationQueryTask& Task);
+
+	//Theta Star
+	FDonNavigationVoxel* ThetaStarReparentByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current, FDonNavigationVoxel* Neighbor);
+	FDonNavigationVoxel* LazyThetaStarReparentByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current);
+	void LazyThetaStarRegressByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current);
 
 	// Thread-aware routines	
 	//FCriticalSection CriticalSection_Collisions;

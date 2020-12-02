@@ -24,7 +24,7 @@ DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ DynamicCollisionUpdates"),  STAT_Dynami
 DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ DynamicCollisionSampling"), STAT_DynamicCollisionSampling, STATGROUP_DonNavigation);
 
 #define DEBUG_DoNAI_THREADS 1
-#define THETA_STAR 1
+#define THETA_STAR 2
 
 void FDonNavigationVoxel::BroadcastCollisionUpdates()
 {
@@ -1886,29 +1886,14 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 	if (!CanNavigateByCollisionProfile(Neighbor, Task.Data.VoxelCollisionProfile))
 		return;
 
+	if (Task.Data.VolumeClosedList.Find(Neighbor))
+		return;
+
 	auto current = Current;
 #if THETA_STAR == 1
-	// Theta* algorithm 
-	// Get parent of Current
-	auto value = Task.Data.VolumeVsGoalTrajectoryMap.Find(Current);
-	if (value)
-	{
-		auto Parent_of_Current = *value;
-		if (Parent_of_Current)
-		{
-			// Do we have direct access from parent of current to neighbour?
-			FHitResult hitResult;
-			const bool bFindInitialOverlaps = true;
-			auto CollisionComponent = Task.Data.CollisionComponent.Get();
-			const auto& Origin = Parent_of_Current->Location;
-			const auto& Destination = Neighbor->Location;
-			if (IsDirectPathLineSweep(CollisionComponent, Origin, Destination, hitResult, bFindInitialOverlaps))
-			{
-				// Replace Current with parent of Current by the line of sight test 
-				current = Parent_of_Current;
-			}
-		}
-	}
+	current = ThetaStarReparentByLineOfSight(Task, Current, Neighbor);
+#elif THETA_STAR == 2
+	current = LazyThetaStarReparentByLineOfSight(Task, Current);
 #endif // THETA_STAR
 
 	// In reality there are two possible segment distances: side and sqrt(2) * side. As a trade-off between accuracy and performance we're assuming all segments to be only equal to the pixel size (majority case are 6-DOF neighbors)
@@ -2059,12 +2044,18 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 	{
 		auto currentVolume = data.Frontier.get(); // the current volume is the "best neighbor" (highest priority) of the previous volume
 
+#if THETA_STAR == 2
+		LazyThetaStarRegressByLineOfSight(synchronousTask, currentVolume);
+#endif
+
 		if (currentVolume == destinationVolume)
 		{	
 			data.bGoalFound = true;
 			break;
 		}
-		
+
+		data.VolumeClosedList.Add(currentVolume);
+
 		const auto& neighbors = FindOrSetupNeighborsForVolume(currentVolume);
 		for (auto neighbor : neighbors)
 		{	
@@ -2424,16 +2415,23 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 		// The best neighbor is defined as the node most likely to lead us towards the goal
 		auto currentVolume = data.Frontier.get(); 
 
+#if THETA_STAR == 2
+		LazyThetaStarRegressByLineOfSight(task, currentVolume);
+#endif
+
 		// Have we reached the goal?
 		if (currentVolume == data.DestinationVolume)
 		{
 			data.bGoalFound = true;
 			return;
 		}
+		
+		// Add to closed list
+		data.VolumeClosedList.Add(currentVolume);
 
 		// Discover all neighbors for current volume:
 		const auto& neighbors = FindOrSetupNeighborsForVolume(currentVolume);
-		
+
 		// Evaluate each neighbor for suitability, assign points, add to Frontier
 		for (auto neighbor : neighbors)
 		{	
@@ -2477,6 +2475,102 @@ void ADonNavigationManager::PackageDirectSolution(FDonNavigationQueryTask& Task)
 			Task.Data.VolumeSolution.Add(Task.Data.OriginVolume);
 			Task.Data.VolumeSolution.Add(Task.Data.DestinationVolume);
 			Task.Data.VolumeSolutionOptimized = Task.Data.VolumeSolution;
+		}
+	}
+}
+
+FDonNavigationVoxel* ADonNavigationManager::ThetaStarReparentByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current, FDonNavigationVoxel* Neighbor)
+{
+	// Theta* algorithm 
+	auto current = Current;
+	// Get parent of Current
+	auto value = Task.Data.VolumeVsGoalTrajectoryMap.Find(Current);
+	if (value)
+	{
+		auto parentCurrent = *value;
+		if (parentCurrent)
+		{
+			// Do we have direct access from parent of current to neighbour?
+			FHitResult hitResult;
+			const bool bFindInitialOverlaps = true;
+			auto CollisionComponent = Task.Data.CollisionComponent.Get();
+			const auto& Origin = parentCurrent->Location;
+			const auto& Destination = Neighbor->Location;
+			if (IsDirectPathLineSweep(CollisionComponent, Origin, Destination, hitResult, bFindInitialOverlaps))
+			{
+				// Replace Current with parent of Current by the line of sight test 
+				current = parentCurrent;
+			}
+		}
+	}
+	return current;
+}
+
+FDonNavigationVoxel* ADonNavigationManager::LazyThetaStarReparentByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current)
+{
+	// Lazy Theta* algorithm
+	auto current = Current;
+	// Get parent of Current
+	auto value = Task.Data.VolumeVsGoalTrajectoryMap.Find(Current);
+	if (value)
+	{
+		auto parentCurrent = *value;
+		if (parentCurrent)
+		{
+			current = parentCurrent;
+		}
+	}
+	return current;
+}
+
+void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current)
+{
+	// Lazy Theta* Algorithm
+	auto currentVolume = Current;
+	// Get parent of currentVolume
+	auto& data = Task.Data;
+	auto value = data.VolumeVsGoalTrajectoryMap.Find(currentVolume);
+	if (value)
+	{
+		auto parentCurrent = *value;
+		if (parentCurrent)
+		{
+			// Do we have direct access from parent of current to neighbour?
+			FHitResult hitResult;
+			const bool bFindInitialOverlaps = true;
+			auto CollisionComponent = data.CollisionComponent.Get();
+			const auto& Origin = parentCurrent->Location;
+			const auto& Destination = currentVolume->Location;
+			if (!IsDirectPathLineSweep(CollisionComponent, Origin, Destination, hitResult, bFindInitialOverlaps))
+			{
+				// Regress to AStar because line of sight assumption is validated
+				auto neighbors = FindOrSetupNeighborsForVolume(currentVolume);
+				// Remove neighbors that are not in the closed list
+				neighbors.RemoveAll([&data](const auto& item) {
+					return data.VolumeClosedList.Find(item) == nullptr;
+				});
+				if (neighbors.Num() > 0)
+				{
+					std::vector<float> AStarCosts;
+					for (auto& Neighbor : neighbors)
+					{
+						float SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*currentVolume, *Neighbor);
+						uint32 newCost = *data.VolumeVsCostMap.Find(Neighbor) + SegmentDist;
+						AStarCosts.push_back(newCost);
+					}
+					auto minArg = std::min_element(AStarCosts.begin(), AStarCosts.end());
+					parentCurrent = neighbors[std::distance(AStarCosts.begin(), minArg)];
+
+					// Update parent and cost with values that would come from plain AStar
+					data.VolumeVsGoalTrajectoryMap.Add(currentVolume, parentCurrent);
+					data.VolumeVsCostMap.Add(currentVolume, *minArg);
+					UE_LOG(DoNNavigationLog, Display, TEXT("%s"), *FString::Printf(TEXT("Regress to Astar!")));
+				}
+			}
+			else
+			{
+				UE_LOG(DoNNavigationLog, Display, TEXT("%s"), *FString::Printf(TEXT("Keep Theta Star!")));
+			}
 		}
 	}
 }
