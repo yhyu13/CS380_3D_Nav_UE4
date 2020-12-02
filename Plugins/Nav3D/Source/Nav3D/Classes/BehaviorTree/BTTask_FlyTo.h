@@ -105,6 +105,9 @@ public:
 
 	// Behavior Tree Input:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
+	FBlackboardKeySelector AlgorithmType;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector FlightLocationKey;	
 
 	/* Optional: Useful in somecases where you want failure or success of a task to automatically update a particular blackboard key*/

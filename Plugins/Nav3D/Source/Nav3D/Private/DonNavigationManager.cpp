@@ -1882,7 +1882,7 @@ bool ADonNavigationManager::CanNavigateByCollisionProfile(FVector Location, cons
 }
 
 void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current, FDonNavigationVoxel* Neighbor)
-{	
+{
 	if (!CanNavigateByCollisionProfile(Neighbor, Task.Data.VoxelCollisionProfile))
 		return;
 
@@ -1890,11 +1890,27 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 		return;
 
 	auto current = Current;
-#if THETA_STAR == 1
-	current = ThetaStarReparentByLineOfSight(Task, Current, Neighbor);
-#elif THETA_STAR == 2
-	current = LazyThetaStarReparentByLineOfSight(Task, Current);
-#endif // THETA_STAR
+	switch (Task.Data.AlgorithmType)
+	{
+	case 0:
+		// AStar
+		break;
+	case 1:
+		// ThetaStar
+		current = ThetaStarReparentByLineOfSight(Task, Current, Neighbor);
+		break;
+	case 2:
+		// LazyThetaStar
+		current = LazyThetaStarReparentByLineOfSight(Task, Current);
+		break;
+	default:
+		break;
+	}
+//#if THETA_STAR == 1
+//	current = ThetaStarReparentByLineOfSight(Task, Current, Neighbor);
+//#elif THETA_STAR == 2
+//	current = LazyThetaStarReparentByLineOfSight(Task, Current);
+//#endif // THETA_STAR
 
 	// In reality there are two possible segment distances: side and sqrt(2) * side. As a trade-off between accuracy and performance we're assuming all segments to be only equal to the pixel size (majority case are 6-DOF neighbors)
 	float SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*current, *Neighbor);
@@ -2044,9 +2060,20 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 	{
 		auto currentVolume = data.Frontier.get(); // the current volume is the "best neighbor" (highest priority) of the previous volume
 
-#if THETA_STAR == 2
-		LazyThetaStarRegressByLineOfSight(synchronousTask, currentVolume);
-#endif
+		switch (data.AlgorithmType)
+		{
+		case 0:
+		case 1:
+			break;
+		case 2:
+			LazyThetaStarRegressByLineOfSight(synchronousTask, currentVolume);
+			break;
+		default:
+			break;
+		}
+//#if THETA_STAR == 2
+//		LazyThetaStarRegressByLineOfSight(synchronousTask, currentVolume);
+//#endif
 
 		if (currentVolume == destinationVolume)
 		{	
@@ -2100,7 +2127,7 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 	return true;
 }
 
-bool ADonNavigationManager::SchedulePathfindingTask(AActor* Actor, FVector Destination, UPARAM(ref) const FDoNNavigationQueryParams& QueryParams, UPARAM(ref) const FDoNNavigationDebugParams& DebugParams, FDoNNavigationResultHandler ResultHandlerDelegate, FDonNavigationDynamicCollisionDelegate DynamicCollisionListener)
+bool ADonNavigationManager::SchedulePathfindingTask(AActor* Actor, int32 AlgorithmType, FVector Destination, UPARAM(ref) const FDoNNavigationQueryParams& QueryParams, UPARAM(ref) const FDoNNavigationDebugParams& DebugParams, FDoNNavigationResultHandler ResultHandlerDelegate, FDonNavigationDynamicCollisionDelegate DynamicCollisionListener)
 {
 	UPrimitiveComponent* CollisionComponent = Actor ? Cast<UPrimitiveComponent>(Actor->GetRootComponent()) : NULL;
 
@@ -2223,6 +2250,7 @@ bool ADonNavigationManager::SchedulePathfindingTask(AActor* Actor, FVector Desti
 			DynamicCollisionListener
 		);
 
+	request.Data.AlgorithmType = AlgorithmType;
 	request.Data.QueryStatus = EDonNavigationQueryStatus::InProgress;
 
 	// Schedule this task
@@ -2415,9 +2443,20 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 		// The best neighbor is defined as the node most likely to lead us towards the goal
 		auto currentVolume = data.Frontier.get(); 
 
-#if THETA_STAR == 2
-		LazyThetaStarRegressByLineOfSight(task, currentVolume);
-#endif
+		switch (data.AlgorithmType)
+		{
+		case 0:
+		case 1:
+			break;
+		case 2:
+			LazyThetaStarRegressByLineOfSight(task, currentVolume);
+			break;
+		default:
+			break;
+		}
+//#if THETA_STAR == 2
+//		LazyThetaStarRegressByLineOfSight(task, currentVolume);
+//#endif
 
 		// Have we reached the goal?
 		if (currentVolume == data.DestinationVolume)

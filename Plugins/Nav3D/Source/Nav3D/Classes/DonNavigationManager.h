@@ -380,6 +380,9 @@ struct FDoNNavigationQueryData
 	UPROPERTY(BlueprintReadOnly, Category = "DoN Navigation")
 	FDoNNavigationQueryParams QueryParams;
 
+	UPROPERTY(BlueprintReadOnly, Category = "DoN Navigation")
+	int32 AlgorithmType;
+
 	FDoNNavigationDebugParams DebugParams;
 
 	// Unbound:
@@ -1063,7 +1066,7 @@ public:
 	*/
 
 	UFUNCTION(BlueprintCallable, Category = "DoN Navigation")		
-	bool SchedulePathfindingTask(AActor* Actor, FVector Destination, UPARAM(ref) const FDoNNavigationQueryParams& QueryParams, UPARAM(ref) const FDoNNavigationDebugParams& DebugParams, FDoNNavigationResultHandler ResultHandlerDelegate, FDonNavigationDynamicCollisionDelegate DynamicCollisionListener);
+	bool SchedulePathfindingTask(AActor* Actor, int32 AlgorithmType, FVector Destination, UPARAM(ref) const FDoNNavigationQueryParams& QueryParams, UPARAM(ref) const FDoNNavigationDebugParams& DebugParams, FDoNNavigationResultHandler ResultHandlerDelegate, FDonNavigationDynamicCollisionDelegate DynamicCollisionListener);
 
 	/** Aborts an existing pathfinding task for a given Actor */
 	UFUNCTION(BlueprintCallable, Category = "DoN Navigation")

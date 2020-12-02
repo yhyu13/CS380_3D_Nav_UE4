@@ -32,11 +32,13 @@ UBTTask_FlyTo::UBTTask_FlyTo(const FObjectInitializer& ObjectInitializer)
 {
 	NodeName = "Fly To";
 	bNotifyTick = true;
-	
+
+	AlgorithmType.AddIntFilter(this,				GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, AlgorithmType));
 	FlightLocationKey.AddVectorFilter(this,		    GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, FlightLocationKey));
 	FlightResultKey.AddBoolFilter(this,				GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, FlightResultKey));
 	KeyToFlipFlopWhenTaskExits.AddBoolFilter(this,  GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, KeyToFlipFlopWhenTaskExits));
 
+	AlgorithmType.AllowNoneAsValue(true);
 	FlightLocationKey.AllowNoneAsValue(true);
 	FlightResultKey.AllowNoneAsValue(true);
 	KeyToFlipFlopWhenTaskExits.AllowNoneAsValue(true);
@@ -118,6 +120,9 @@ EBTNodeResult::Type UBTTask_FlyTo::SchedulePathfindingRequest(UBehaviorTreeCompo
 	FVector flightDestination = blackboard->GetValueAsVector(FlightLocationKey.SelectedKeyName);
 	myMemory->TargetLocation = flightDestination;
 
+	// Get algorithm type
+	int32 algoType = blackboard->GetValueAsInt(AlgorithmType.SelectedKeyName);
+
 	// Bind result notification delegate:
 	FDoNNavigationResultHandler resultHandler;
 	resultHandler.BindDynamic(this, &UBTTask_FlyTo::Pathfinding_OnFinish);
@@ -127,7 +132,7 @@ EBTNodeResult::Type UBTTask_FlyTo::SchedulePathfindingRequest(UBehaviorTreeCompo
 
 	// Schedule task:
 	bool bTaskScheduled = false;
-	bTaskScheduled = NavigationManager->SchedulePathfindingTask(pawn, flightDestination, myMemory->QueryParams, DebugParams, resultHandler, myMemory->DynamicCollisionListener);
+	bTaskScheduled = NavigationManager->SchedulePathfindingTask(pawn, algoType, flightDestination, myMemory->QueryParams, DebugParams, resultHandler, myMemory->DynamicCollisionListener);
 
 	if (bTaskScheduled)
 	{
