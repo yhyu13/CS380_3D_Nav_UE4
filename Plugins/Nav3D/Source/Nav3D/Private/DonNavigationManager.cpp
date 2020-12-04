@@ -24,7 +24,6 @@ DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ DynamicCollisionUpdates"),  STAT_Dynami
 DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ DynamicCollisionSampling"), STAT_DynamicCollisionSampling, STATGROUP_DonNavigation);
 
 #define DEBUG_DoNAI_THREADS 1
-#define THETA_STAR 2
 
 void FDonNavigationVoxel::BroadcastCollisionUpdates()
 {
@@ -1906,11 +1905,6 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 	default:
 		break;
 	}
-//#if THETA_STAR == 1
-//	current = ThetaStarReparentByLineOfSight(Task, Current, Neighbor);
-//#elif THETA_STAR == 2
-//	current = LazyThetaStarReparentByLineOfSight(Task, Current);
-//#endif // THETA_STAR
 
 	// In reality there are two possible segment distances: side and sqrt(2) * side. As a trade-off between accuracy and performance we're assuming all segments to be only equal to the pixel size (majority case are 6-DOF neighbors)
 	float SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*current, *Neighbor);
@@ -2062,18 +2056,12 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 
 		switch (data.AlgorithmType)
 		{
-		case 0:
-		case 1:
-			break;
 		case 2:
 			LazyThetaStarRegressByLineOfSight(synchronousTask, currentVolume);
 			break;
 		default:
 			break;
 		}
-//#if THETA_STAR == 2
-//		LazyThetaStarRegressByLineOfSight(synchronousTask, currentVolume);
-//#endif
 
 		if (currentVolume == destinationVolume)
 		{	
@@ -2445,18 +2433,12 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 
 		switch (data.AlgorithmType)
 		{
-		case 0:
-		case 1:
-			break;
 		case 2:
 			LazyThetaStarRegressByLineOfSight(task, currentVolume);
 			break;
 		default:
 			break;
 		}
-//#if THETA_STAR == 2
-//		LazyThetaStarRegressByLineOfSight(task, currentVolume);
-//#endif
 
 		// Have we reached the goal?
 		if (currentVolume == data.DestinationVolume)
