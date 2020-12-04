@@ -185,6 +185,9 @@ void ADonNavigationManager::ReceiveAsyncDynamicCollisionUpdates()
 
 void ADonNavigationManager::DrawAsyncDebugRequests()
 {
+	/*
+		CS380 : enable debug drawing in both allocation and editor
+	*/
 #if 1 //WITH_EDITOR
 
 	while (!DrawDebugLinesQueue.IsEmpty())
@@ -1892,6 +1895,9 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 		return;
 
 	auto current = Current;
+	/*
+		CS380 : Theta Star Algorithm
+	*/
 	switch (data.AlgorithmType)
 	{
 	case 0:
@@ -1910,7 +1916,7 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 	}
 
 	// In reality there are two possible segment distances: side and sqrt(2) * side. As a trade-off between accuracy and performance we're assuming all segments to be only equal to the pixel size (majority case are 6-DOF neighbors)
-	float SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*current, *Neighbor);
+	float SegmentDist = VoxelSize;// *FDonNavigationVoxel::DistanceL2(*current, *Neighbor);
 
 	uint32 newCost = *data.VolumeVsCostMap.Find(current) + SegmentDist;
 	uint32* volumeCost = data.VolumeVsCostMap.Find(Neighbor);
@@ -2057,6 +2063,9 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 	{
 		auto currentVolume = data.Frontier.get(); // the current volume is the "best neighbor" (highest priority) of the previous volume
 
+		/*
+			CS380 : Theta Star Algorithm
+		*/
 		switch (data.AlgorithmType)
 		{
 		case 2:
@@ -2445,6 +2454,7 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 
 		if (data.DebugParams.DrawDebugOpenListVolumes)
 		{
+			// CS380 : draw open list
 			DrawDebugPoint_Safe(GetWorld(), currentVolume->Location, 6.f, FColor::Magenta, true, -1.f);
 		}
 		
@@ -2456,8 +2466,10 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 		}
 		
 		// Add to closed list
+		
 		if (data.DebugParams.DrawDebugClosedListVolumes && !data.VolumeClosedList.Contains(currentVolume))
 		{
+			// CS380 : draw closed list
 			DrawDebugPoint_Safe(GetWorld(), currentVolume->Location, 6.f, FColor::Green, true, -1.f);
 		}
 		data.VolumeClosedList.Add(currentVolume);
@@ -2465,7 +2477,6 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 
 		// Discover all neighbors for current volume:
 		const auto& neighbors = FindOrSetupNeighborsForVolume(currentVolume);
-
 		// Evaluate each neighbor for suitability, assign points, add to Frontier
 		for (auto neighbor : neighbors)
 		{	
@@ -2577,7 +2588,7 @@ void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQuer
 			const auto& Destination = currentVolume->Location;
 			if (!IsDirectPathLineSweep(CollisionComponent, Origin, Destination, hitResult, bFindInitialOverlaps))
 			{
-				// Regress to AStar because line of sight assumption is validated
+				// Regress to AStar because line of sight assumption is violated
 				auto neighbors = FindOrSetupNeighborsForVolume(currentVolume);
 				// Remove neighbors that are not in the closed list
 				neighbors.RemoveAll([&data](const auto& item) {
@@ -2588,7 +2599,7 @@ void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQuer
 					std::vector<float> AStarCosts;
 					for (auto& Neighbor : neighbors)
 					{
-						float SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*currentVolume, *Neighbor);
+						float SegmentDist = VoxelSize;// *FDonNavigationVoxel::DistanceL2(*currentVolume, *Neighbor);
 						uint32 newCost = *data.VolumeVsCostMap.Find(Neighbor) + SegmentDist;
 						AStarCosts.push_back(newCost);
 					}
@@ -2598,12 +2609,16 @@ void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQuer
 					// Update parent and cost with values that would come from plain AStar
 					data.VolumeVsGoalTrajectoryMap.Add(currentVolume, parentCurrent);
 					data.VolumeVsCostMap.Add(currentVolume, *minArg);
-					UE_LOG(DoNNavigationLog, Display, TEXT("%s"), *FString::Printf(TEXT("Regress to Astar!")));
+					//UE_LOG(DoNNavigationLog, Display, TEXT("%s"), *FString::Printf(TEXT("Regress to Astar!")));
+				}
+				else
+				{
+					UE_LOG(DoNNavigationLog, Display, TEXT("%s"), *FString::Printf(TEXT("Regress to Astar Failed!")));
 				}
 			}
 			else
 			{
-				UE_LOG(DoNNavigationLog, Display, TEXT("%s"), *FString::Printf(TEXT("Keep Theta Star!")));
+				//UE_LOG(DoNNavigationLog, Display, TEXT("%s"), *FString::Printf(TEXT("Keep Theta Star!")));
 			}
 		}
 	}
@@ -2685,7 +2700,7 @@ void ADonNavigationManager::TickScheduledPathfindingTasks(float DeltaSeconds, in
 
 				data.QueryStatus = EDonNavigationQueryStatus::QueryHasNoSolution;
 
-				#if WITH_EDITOR
+				#if 1 //WITH_EDITOR
 					DrawDebugSphere_Safe(GetWorld(), data.Destination, 15.f, 8.f, FColor::Red, true, 15.f);
 				#endif
 			}
@@ -2761,7 +2776,7 @@ void ADonNavigationManager::TickNavigationOptimizerCycle(FDonNavigationQueryTask
 
 			data.QueryStatus = EDonNavigationQueryStatus::Failure;
 
-			#if WITH_EDITOR
+			#if 1 // WITH_EDITOR
 			DrawDebugSphere_Safe(GetWorld(), data.Destination, 15.f, 8.f, FColor::Red, true, 15.f);
 			#endif
 

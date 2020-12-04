@@ -107,6 +107,14 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector AlgorithmType;
 
+	// CS380 : black board key debug draw closed list
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
+	FBlackboardKeySelector DebugDrawClosedList;
+	
+	// CS380 : black board key debug draw open list
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
+	FBlackboardKeySelector DebugDrawOpenList;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector FlightLocationKey;	
 

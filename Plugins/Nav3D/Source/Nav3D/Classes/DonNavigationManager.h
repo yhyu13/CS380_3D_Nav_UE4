@@ -303,9 +303,11 @@ struct FDoNNavigationDebugParams
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	bool DrawDebugVolumes = false;
 
+	// CS380 : draw closed list
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	bool DrawDebugClosedListVolumes = false;
 
+	// CS380 : draw closed list
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	bool DrawDebugOpenListVolumes = false;
 
@@ -386,6 +388,9 @@ struct FDoNNavigationQueryData
 	UPROPERTY(BlueprintReadOnly, Category = "DoN Navigation")
 	FDoNNavigationQueryParams QueryParams;
 
+	/*
+		CS380 : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
+	*/
 	UPROPERTY(BlueprintReadOnly, Category = "DoN Navigation")
 	int32 AlgorithmType;
 
@@ -1231,7 +1236,10 @@ private:
 	void PackageRawSolution(FDonNavigationQueryTask& task);
 	void PackageDirectSolution(FDonNavigationQueryTask& Task);
 
-	//Theta Star
+
+	/*
+		CS380 : Theta Star Algorithm
+	*/
 	FDonNavigationVoxel* ThetaStarReparentByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current, FDonNavigationVoxel* Neighbor);
 	FDonNavigationVoxel* LazyThetaStarReparentByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current);
 	void LazyThetaStarRegressByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current);

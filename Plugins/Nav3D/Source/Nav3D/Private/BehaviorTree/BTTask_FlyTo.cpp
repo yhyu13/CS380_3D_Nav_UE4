@@ -34,11 +34,15 @@ UBTTask_FlyTo::UBTTask_FlyTo(const FObjectInitializer& ObjectInitializer)
 	bNotifyTick = true;
 
 	AlgorithmType.AddIntFilter(this,				GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, AlgorithmType));
+	DebugDrawClosedList.AddBoolFilter(this,			GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, DebugDrawClosedList));
+	DebugDrawOpenList.AddBoolFilter(this,			GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, DebugDrawOpenList));
 	FlightLocationKey.AddVectorFilter(this,		    GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, FlightLocationKey));
 	FlightResultKey.AddBoolFilter(this,				GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, FlightResultKey));
 	KeyToFlipFlopWhenTaskExits.AddBoolFilter(this,  GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, KeyToFlipFlopWhenTaskExits));
 
 	AlgorithmType.AllowNoneAsValue(true);
+	DebugDrawClosedList.AllowNoneAsValue(true);
+	DebugDrawOpenList.AllowNoneAsValue(true);
 	FlightLocationKey.AllowNoneAsValue(true);
 	FlightResultKey.AllowNoneAsValue(true);
 	KeyToFlipFlopWhenTaskExits.AllowNoneAsValue(true);
@@ -120,8 +124,14 @@ EBTNodeResult::Type UBTTask_FlyTo::SchedulePathfindingRequest(UBehaviorTreeCompo
 	FVector flightDestination = blackboard->GetValueAsVector(FlightLocationKey.SelectedKeyName);
 	myMemory->TargetLocation = flightDestination;
 
-	// Get algorithm type
+	/*
+		CS 380 : black board keys
+	*/
 	int32 algoType = blackboard->GetValueAsInt(AlgorithmType.SelectedKeyName);
+	bool debugDrawClosedList = blackboard->GetValueAsBool(DebugDrawClosedList.SelectedKeyName);
+	bool debugDrawOpenList = blackboard->GetValueAsBool(DebugDrawOpenList.SelectedKeyName);
+	DebugParams.DrawDebugClosedListVolumes = debugDrawClosedList; 
+	DebugParams.DrawDebugOpenListVolumes = debugDrawOpenList;
 
 	// Bind result notification delegate:
 	FDoNNavigationResultHandler resultHandler;
