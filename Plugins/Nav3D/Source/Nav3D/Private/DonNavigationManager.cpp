@@ -1290,9 +1290,11 @@ void ADonNavigationManager::Debug_DrawVoxelCollisionProfile(UPrimitiveComponent*
 		else
 		{
 			auto volume = VolumeAtSafe(voxelX, voxelY, voxelZ);
-			voxelLocation = volume->Location;
+			//this bug was found by Lowell Novitch
 			if (!volume)
 				continue;
+
+			voxelLocation = volume->Location;
 		}
 
 		DrawDebugVoxel_Safe(GetWorld(), voxelLocation, NavVolumeExtent(), FColor::Red, bDrawPersistent, Duration, 0, DebugVoxelsLineThickness);
