@@ -185,7 +185,7 @@ void ADonNavigationManager::ReceiveAsyncDynamicCollisionUpdates()
 
 void ADonNavigationManager::DrawAsyncDebugRequests()
 {
-#if WITH_EDITOR
+#if 1 //WITH_EDITOR
 
 	while (!DrawDebugLinesQueue.IsEmpty())
 	{
