@@ -1930,6 +1930,11 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 		uint32 priority = newCost + heuristic;
 
 		data.Frontier.put(Neighbor, priority);
+		if (data.DebugParams.DrawDebugOpenListVolumes)
+		{
+			// CS380 : draw open list
+			DrawDebugPoint_Safe(GetWorld(), Neighbor->Location, 6.f, FColor::Magenta, true, -1.f);
+		}
 	}
 }
 
@@ -2452,12 +2457,6 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 			break;
 		}
 
-		if (data.DebugParams.DrawDebugOpenListVolumes)
-		{
-			// CS380 : draw open list
-			DrawDebugPoint_Safe(GetWorld(), currentVolume->Location, 6.f, FColor::Magenta, true, -1.f);
-		}
-		
 		// Have we reached the goal?
 		if (currentVolume == data.DestinationVolume)
 		{
@@ -2465,15 +2464,14 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 			return;
 		}
 		
-		// Add to closed list
 		
 		if (data.DebugParams.DrawDebugClosedListVolumes && !data.VolumeClosedList.Contains(currentVolume))
 		{
 			// CS380 : draw closed list
 			DrawDebugPoint_Safe(GetWorld(), currentVolume->Location, 6.f, FColor::Green, true, -1.f);
 		}
+		// Add to closed list
 		data.VolumeClosedList.Add(currentVolume);
-
 
 		// Discover all neighbors for current volume:
 		const auto& neighbors = FindOrSetupNeighborsForVolume(currentVolume);
