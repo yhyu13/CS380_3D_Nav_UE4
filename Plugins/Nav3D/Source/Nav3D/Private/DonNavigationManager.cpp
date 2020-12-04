@@ -1882,14 +1882,15 @@ bool ADonNavigationManager::CanNavigateByCollisionProfile(FVector Location, cons
 
 void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current, FDonNavigationVoxel* Neighbor)
 {
-	if (!CanNavigateByCollisionProfile(Neighbor, Task.Data.VoxelCollisionProfile))
+	auto& data = Task.Data;
+	if (!CanNavigateByCollisionProfile(Neighbor, data.VoxelCollisionProfile))
 		return;
 
-	if (Task.Data.VolumeClosedList.Find(Neighbor))
+	if (data.VolumeClosedList.Find(Neighbor))
 		return;
 
 	auto current = Current;
-	switch (Task.Data.AlgorithmType)
+	switch (data.AlgorithmType)
 	{
 	case 0:
 		// AStar
@@ -1909,18 +1910,18 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 	// In reality there are two possible segment distances: side and sqrt(2) * side. As a trade-off between accuracy and performance we're assuming all segments to be only equal to the pixel size (majority case are 6-DOF neighbors)
 	float SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*current, *Neighbor);
 
-	uint32 newCost = *Task.Data.VolumeVsCostMap.Find(current) + SegmentDist;
-	uint32* volumeCost = Task.Data.VolumeVsCostMap.Find(Neighbor);
+	uint32 newCost = *data.VolumeVsCostMap.Find(current) + SegmentDist;
+	uint32* volumeCost = data.VolumeVsCostMap.Find(Neighbor);
 
 	if (!volumeCost || newCost < *volumeCost)
 	{
-		Task.Data.VolumeVsGoalTrajectoryMap.Add(Neighbor, current);
-		Task.Data.VolumeVsCostMap.Add(Neighbor, newCost);
+		data.VolumeVsGoalTrajectoryMap.Add(Neighbor, current);
+		data.VolumeVsCostMap.Add(Neighbor, newCost);
 
-		float heuristic = FVector::Dist(Neighbor->Location, Task.Data.Destination);
+		float heuristic = FVector::Dist(Neighbor->Location, data.Destination);
 		uint32 priority = newCost + heuristic;
 
-		Task.Data.Frontier.put(Neighbor, priority);
+		data.Frontier.put(Neighbor, priority);
 	}
 }
 
@@ -2440,6 +2441,11 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 			break;
 		}
 
+		if (data.DebugParams.DrawDebugOpenListVolumes)
+		{
+			DrawDebugPoint_Safe(GetWorld(), currentVolume->Location, 6.f, FColor::Magenta, true, -1.f);
+		}
+		
 		// Have we reached the goal?
 		if (currentVolume == data.DestinationVolume)
 		{
@@ -2448,7 +2454,12 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 		}
 		
 		// Add to closed list
+		if (data.DebugParams.DrawDebugClosedListVolumes && !data.VolumeClosedList.Contains(currentVolume))
+		{
+			DrawDebugPoint_Safe(GetWorld(), currentVolume->Location, 6.f, FColor::Green, true, -1.f);
+		}
 		data.VolumeClosedList.Add(currentVolume);
+
 
 		// Discover all neighbors for current volume:
 		const auto& neighbors = FindOrSetupNeighborsForVolume(currentVolume);

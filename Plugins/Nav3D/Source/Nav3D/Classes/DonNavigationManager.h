@@ -304,6 +304,12 @@ struct FDoNNavigationDebugParams
 	bool DrawDebugVolumes = false;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
+	bool DrawDebugClosedListVolumes = false;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
+	bool DrawDebugOpenListVolumes = false;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	bool VisualizeRawPath = false;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
