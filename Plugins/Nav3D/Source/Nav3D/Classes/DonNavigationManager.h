@@ -21,6 +21,7 @@
 #include "Containers/Queue.h"
 #include "Components/BoxComponent.h"
 
+#include <chrono>
 #include "DonNavigationManager.generated.h"
 
 DECLARE_STATS_GROUP(TEXT("DonNavigation"), STATGROUP_DonNavigation, STATCAT_Advanced);
@@ -295,6 +296,10 @@ struct FDoNNavigationQueryParams
 	*   (Eg: Behavior tree singleton nodes)
 	*/
 	void* CustomDelegatePayload = NULL;	
+
+	std::chrono::time_point<std::chrono::steady_clock> startTime;
+
+	bool done = false;
 
 	FDoNNavigationQueryParams()
 	{

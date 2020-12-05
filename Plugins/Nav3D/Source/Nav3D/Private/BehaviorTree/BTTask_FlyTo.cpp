@@ -25,6 +25,8 @@
 #include "Runtime/AIModule/Classes/AIController.h"
 #include "VisualLogger/VisualLogger.h"
 
+#include <chrono>
+
 UBTTask_FlyTo::UBTTask_FlyTo(const FObjectInitializer& ObjectInitializer) 
 	: Super(ObjectInitializer)
 	, bRecalcPathOnDestinationChanged(false)
@@ -128,6 +130,8 @@ EBTNodeResult::Type UBTTask_FlyTo::SchedulePathfindingRequest(UBehaviorTreeCompo
 	QueryParams.AlgorithmType = algoType;
 	int32 movementType = blackboard->GetValueAsInt(MovementMode.SelectedKeyName);
 	QueryParams.MovementMode = movementType;
+
+	QueryParams.startTime = std::chrono::steady_clock::now();
 
 	bool debugDrawClosedList = blackboard->GetValueAsBool(DebugDrawClosedList.SelectedKeyName);
 	bool debugDrawOpenList = blackboard->GetValueAsBool(DebugDrawOpenList.SelectedKeyName);
@@ -277,6 +281,20 @@ void UBTTask_FlyTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemor
 	{
 
 	case EDonNavigationQueryStatus::Success:
+
+
+		//first success tick
+		if (!myMemory->QueryParams.done)
+		{
+			myMemory->QueryParams.done = true;
+			
+			auto end = std::chrono::steady_clock::now();
+			std::chrono::duration<double> elapsed_seconds = end - myMemory->QueryParams.startTime;
+
+			FString sTime = FString::Printf(TEXT("time elapsed to find path: %.4f seconds"), elapsed_seconds.count());
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow,*sTime);
+
+		}
 
 		// Is our path solution no longer valid?
 		if (myMemory->bSolutionInvalidatedByDynamicObstacle)
