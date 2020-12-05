@@ -1209,7 +1209,7 @@ public:
 	void VisualizeDynamicCollisionListeners(FDonNavigationDynamicCollisionDelegate Listener, UPARAM(ref) const FDoNNavigationQueryData& QueryData);
 
 	// NAV Visualizer
-	void VisualizeSolution(FVector source, FVector destination, const TArray<FVector>& PathSolutionRaw, const TArray<FVector>& PathSolutionOptimized, const FDoNNavigationDebugParams& DebugParams);
+	void VisualizeSolution(FVector source, FVector destination, const TArray<FVector>& PathSolutionRaw, const TArray<FVector>& PathSolutionOptimized, const FDoNNavigationQueryParams& QueryParams, const FDoNNavigationDebugParams& DebugParams);
 
 	// Logging utility
 	static FString GetMeshLogIdentifier(UPrimitiveComponent* Mesh);

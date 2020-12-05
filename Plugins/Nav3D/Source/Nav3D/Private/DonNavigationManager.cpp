@@ -1682,8 +1682,6 @@ FDonNavigationVoxel* ADonNavigationManager::ResolveVolume(FVector &DesiredLocati
 				FVector locationToSample = DesiredLocation + tweak;				
 				FVector desiredLocationToSample = DesiredLocation + tweakDir * UnrealPhyxPenetrationDepth; // very important!
 
-				//DrawDebugSphere_Safe(GetWorld(), locationToSample, 6.f, 16, FColor::Yellow, false, 5.f);
-
 				auto volume = VolumeAt(locationToSample);
 				if (!volume || !CanNavigate(volume))
 					continue;
@@ -1697,6 +1695,7 @@ FDonNavigationVoxel* ADonNavigationManager::ResolveVolume(FVector &DesiredLocati
 				UE_LOG(DoNNavigationLog, Warning, TEXT("Substitute Origin or Destination (%s offset) is being used for pawn to overcome initial overlap. (Can be disabled in QueryParams)"), *tweak.ToString());
 
 				DesiredLocation = locationToSample;
+				//DrawDebugSphere_Safe(GetWorld(), locationToSample, 6.f, 16, FColor::Yellow, false, -1.f);
 
 				return volume; // success
 			}
@@ -1998,7 +1997,7 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 		PathSolutionRaw.Add(Destination);
 		PathSolutionOptimized = PathSolutionRaw;
 
-		VisualizeSolution(Origin, Destination, PathSolutionRaw, PathSolutionOptimized, DebugParams);
+		VisualizeSolution(Origin, Destination, PathSolutionRaw, PathSolutionOptimized, QueryParams, DebugParams);
 
 		return true;
 	}
@@ -2119,7 +2118,7 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 	UE_LOG(DoNNavigationLog, Log, TEXT("%s"), *calcTime3);
 
 	// Visualize solution:
-	VisualizeSolution(Origin, Destination, PathSolutionRaw, PathSolutionOptimized, DebugParams);
+	VisualizeSolution(Origin, Destination, PathSolutionRaw, PathSolutionOptimized, QueryParams, DebugParams);
 
 	return true;
 }
@@ -2171,7 +2170,7 @@ bool ADonNavigationManager::SchedulePathfindingTask(AActor* Actor, FVector Desti
 
 		PackageDirectSolution(task);
 
-		VisualizeSolution(task.Data.Origin, task.Data.Destination, task.Data.PathSolutionRaw, task.Data.PathSolutionOptimized, task.Data.DebugParams);
+		VisualizeSolution(task.Data.Origin, task.Data.Destination, task.Data.PathSolutionRaw, task.Data.PathSolutionOptimized, task.Data.QueryParams, task.Data.DebugParams);
 
 		// call success delegate immediately
 		task.Data.QueryStatus = EDonNavigationQueryStatus::Success;
@@ -2644,7 +2643,7 @@ void ADonNavigationManager::TickScheduledPathfindingTasks(float DeltaSeconds, in
 				
 				PackageRawSolution(task); // @FeatureIdea: we can construct a partially optimized solution by merging optimized and unoptimized results.
 
-				VisualizeSolution(data.Origin, data.Destination, data.PathSolutionRaw, data.PathSolutionOptimized, data.DebugParams);
+				VisualizeSolution(data.Origin, data.Destination, data.PathSolutionRaw, data.PathSolutionOptimized, data.QueryParams, data.DebugParams);
 
 				data.QueryStatus = EDonNavigationQueryStatus::Success;
 			}			
@@ -2777,7 +2776,7 @@ void ADonNavigationManager::TickNavigationOptimizerCycle(FDonNavigationQueryTask
 
 			PackageRawSolution(task);
 
-			VisualizeSolution(data.Origin, data.Destination, data.PathSolutionRaw, data.PathSolutionOptimized, data.DebugParams);
+			VisualizeSolution(data.Origin, data.Destination, data.PathSolutionRaw, data.PathSolutionOptimized, data.QueryParams, data.DebugParams);
 
 			data.QueryStatus = EDonNavigationQueryStatus::Success;
 		}		
@@ -2810,7 +2809,7 @@ void ADonNavigationManager::TickNavigationOptimizerCycle(FDonNavigationQueryTask
 				AddCollisionListenerToVolumeFromTask(volume, task);
 		}
 
-		VisualizeSolution(data.Origin, data.Destination, data.PathSolutionRaw, data.PathSolutionOptimized, data.DebugParams);
+		VisualizeSolution(data.Origin, data.Destination, data.PathSolutionRaw, data.PathSolutionOptimized, data.QueryParams, data.DebugParams);
 
 		UE_LOG(DoNNavigationLog, Verbose, TEXT("Query for %s, %s is complete. Solved in %f seconds"), *data.GetActorName(), *data.Destination.ToString(), data.SolverTimeTaken);
 
@@ -3077,12 +3076,27 @@ void ADonNavigationManager::VisualizeNAVResult(const TArray<FVector>& PathSoluti
 	}
 }
 
-void ADonNavigationManager::VisualizeSolution(FVector source, FVector destination, const TArray<FVector>& PathSolutionRaw, const TArray<FVector>& PathSolutionOptimized, const FDoNNavigationDebugParams& DebugParams)
+void ADonNavigationManager::VisualizeSolution(FVector source, FVector destination, const TArray<FVector>& PathSolutionRaw, const TArray<FVector>& PathSolutionOptimized, const FDoNNavigationQueryParams& QueryParams, const FDoNNavigationDebugParams& DebugParams)
 {
 	if (DebugParams.VisualizeRawPath)
 	{
-		ADonNavigationManager::VisualizeNAVResult(PathSolutionRaw, source, destination, true, DebugParams, FColor::Yellow);
-			
+		// Hang & Lowell : visualize algorithms with different color
+		FColor c;
+		switch (QueryParams.AlgorithmType)
+		{
+		case 0:
+			c = FColor::Yellow;
+			break;
+		case 1:
+			c = FColor::Purple;
+			break;
+		case 2:
+			c = FColor::Orange;
+			break;
+		default:
+			break;
+		}	
+		ADonNavigationManager::VisualizeNAVResult(PathSolutionRaw, source, destination, true, DebugParams, c);
 	}
 
 	if (DebugParams.VisualizeOptimizedPath)
