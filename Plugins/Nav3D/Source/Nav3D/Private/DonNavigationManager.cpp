@@ -186,7 +186,7 @@ void ADonNavigationManager::ReceiveAsyncDynamicCollisionUpdates()
 void ADonNavigationManager::DrawAsyncDebugRequests()
 {
 	/*
-		CS380 : enable debug drawing in both allocation and editor
+		Hang & Lowell : enable debug drawing in both allocation and editor
 	*/
 #if 1 //WITH_EDITOR
 
@@ -1895,20 +1895,14 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 		return;
 
 	auto current = Current;
-	/*
-		CS380 : Theta Star Algorithm
-	*/
+
+	// Hang & Lowell : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
 	switch (data.QueryParams.AlgorithmType)
 	{
-	case 0:
-		// AStar
-		break;
 	case 1:
-		// ThetaStar
 		current = ThetaStarReparentByLineOfSight(Task, Current, Neighbor);
 		break;
 	case 2:
-		// LazyThetaStar
 		current = LazyThetaStarReparentByLineOfSight(Task, Current);
 		break;
 	default:
@@ -1932,7 +1926,7 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 		data.Frontier.put(Neighbor, priority);
 		if (data.DebugParams.DrawDebugOpenListVolumes)
 		{
-			// CS380 : draw open list
+			// Hang & Lowell : draw open list
 			DrawDebugPoint_Safe(GetWorld(), Neighbor->Location, 6.f, FColor::Magenta, true, -1.f);
 		}
 	}
@@ -2068,9 +2062,7 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 	{
 		auto currentVolume = data.Frontier.get(); // the current volume is the "best neighbor" (highest priority) of the previous volume
 
-		/*
-			CS380 : Theta Star Algorithm
-		*/
+		// Hang & Lowell : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
 		switch (data.QueryParams.AlgorithmType)
 		{
 		case 2:
@@ -2444,6 +2436,7 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 		// The best neighbor is defined as the node most likely to lead us towards the goal
 		auto currentVolume = data.Frontier.get(); 
 
+		// Hang & Lowell : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
 		switch (data.QueryParams.AlgorithmType)
 		{
 		case 2:
@@ -2460,10 +2453,9 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 			return;
 		}
 		
-		
 		if (data.DebugParams.DrawDebugClosedListVolumes && !data.VolumeClosedList.Contains(currentVolume))
 		{
-			// CS380 : draw closed list
+			// Hang & Lowell : draw closed list
 			DrawDebugPoint_Safe(GetWorld(), currentVolume->Location, 6.f, FColor::Green, true, -1.f);
 		}
 		// Add to closed list

@@ -33,19 +33,26 @@ UBTTask_FlyTo::UBTTask_FlyTo(const FObjectInitializer& ObjectInitializer)
 	NodeName = "Fly To";
 	bNotifyTick = true;
 
-	AlgorithmType.AddIntFilter(this,				GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, AlgorithmType));
-	DebugDrawClosedList.AddBoolFilter(this,			GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, DebugDrawClosedList));
-	DebugDrawOpenList.AddBoolFilter(this,			GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, DebugDrawOpenList));
 	FlightLocationKey.AddVectorFilter(this,		    GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, FlightLocationKey));
 	FlightResultKey.AddBoolFilter(this,				GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, FlightResultKey));
 	KeyToFlipFlopWhenTaskExits.AddBoolFilter(this,  GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, KeyToFlipFlopWhenTaskExits));
 
-	AlgorithmType.AllowNoneAsValue(true);
-	DebugDrawClosedList.AllowNoneAsValue(true);
-	DebugDrawOpenList.AllowNoneAsValue(true);
 	FlightLocationKey.AllowNoneAsValue(true);
 	FlightResultKey.AllowNoneAsValue(true);
 	KeyToFlipFlopWhenTaskExits.AllowNoneAsValue(true);
+
+	{
+		// Hang & Lowell Black board keys
+		AlgorithmType.AddIntFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, AlgorithmType));
+		DebugDrawClosedList.AddBoolFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, DebugDrawClosedList));
+		DebugDrawOpenList.AddBoolFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, DebugDrawOpenList));
+		MovementMode.AddIntFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_FlyTo, MovementMode));
+
+		AlgorithmType.AllowNoneAsValue(true);
+		DebugDrawClosedList.AllowNoneAsValue(true);
+		DebugDrawOpenList.AllowNoneAsValue(true);
+		MovementMode.AllowNoneAsValue(true);
+	}
 }
 
 void UBTTask_FlyTo::InitializeFromAsset(UBehaviorTree& Asset)
@@ -115,10 +122,13 @@ EBTNodeResult::Type UBTTask_FlyTo::SchedulePathfindingRequest(UBehaviorTreeCompo
 
 
 	/*
-		CS 380 : black board keys
+		Hang & Lowell : black board keys
 	*/
 	int32 algoType = blackboard->GetValueAsInt(AlgorithmType.SelectedKeyName);
 	QueryParams.AlgorithmType = algoType;
+	int32 movementType = blackboard->GetValueAsInt(MovementMode.SelectedKeyName);
+	QueryParams.MovementMode = movementType;
+
 	bool debugDrawClosedList = blackboard->GetValueAsBool(DebugDrawClosedList.SelectedKeyName);
 	bool debugDrawOpenList = blackboard->GetValueAsBool(DebugDrawOpenList.SelectedKeyName);
 	DebugParams.DrawDebugClosedListVolumes = debugDrawClosedList;
@@ -290,9 +300,15 @@ void UBTTask_FlyTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemor
 			break;
 		}
 
-		// Move along the path solution towards our goal:
-		//TickPathNavigation(OwnerComp, myMemory, DeltaSeconds);
-
+		// Hang & Lowell : movement mode (int) : 0- no movement, 1- move 
+		switch (myMemory->QueryParams.MovementMode)
+		{
+		case 1:
+			// Move along the path solution towards our goal:
+			TickPathNavigation(OwnerComp, myMemory, DeltaSeconds);
+		default:
+			break;
+		}
 		break;
 
 	// For advanced usecases we could support partial path traversal, etc (so we slowly progress towards the goal

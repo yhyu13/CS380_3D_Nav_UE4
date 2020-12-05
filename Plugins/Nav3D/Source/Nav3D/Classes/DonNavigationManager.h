@@ -230,11 +230,13 @@ struct FDoNNavigationQueryParams
 {
 	GENERATED_USTRUCT_BODY()
 
-	/*
-		CS380 : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
-	*/
+	// Hang & Lowell : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DoN Navigation")
 	int32 AlgorithmType = 0;
+
+	// Hang & Lowell : 0 - No movement, 1 - Move
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DoN Navigation")
+	int32 MovementMode = 0;
 
 	/** If a query takes more time to run than the value specified here, the pathfinding task will abort
 	*   This is useful to prevent expensive queries (eg: by passing a destination for which no solution exists)
@@ -309,11 +311,11 @@ struct FDoNNavigationDebugParams
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	bool DrawDebugVolumes = false;
 
-	// CS380 : draw closed list
+	// Hang & Lowell : draw closed list
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	bool DrawDebugClosedListVolumes = false;
 
-	// CS380 : draw closed list
+	// Hang & Lowell : draw closed list
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	bool DrawDebugOpenListVolumes = false;
 
@@ -1237,7 +1239,7 @@ private:
 
 
 	/*
-		CS380 : Theta Star Algorithm
+		Hang & Lowell : Theta Star Algorithm
 	*/
 	FDonNavigationVoxel* ThetaStarReparentByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current, FDonNavigationVoxel* Neighbor);
 	FDonNavigationVoxel* LazyThetaStarReparentByLineOfSight(FDonNavigationQueryTask& Task, FDonNavigationVoxel* Current);

@@ -105,21 +105,21 @@ public:
 
 	// Behavior Tree Input:
 
-	// CS380 : black board key algorithm
+	// Hang & Lowell : black board key algorithm (int) : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector AlgorithmType;
 
-	// CS380 : black board key debug draw closed list
+	// Hang & Lowell : black board key movement mode (int) : 0- no movement, 1- move 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
+	FBlackboardKeySelector MovementMode;
+
+	// Hang & Lowell : black board key debug draw closed list (bool)
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector DebugDrawClosedList;
 	
-	// CS380 : black board key debug draw open list
+	// Hang & Lowell : black board key debug draw open list (bool)
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector DebugDrawOpenList;
-
-	// CS380 : black board key flight mode
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
-	FBlackboardKeySelector FlightMode;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector FlightLocationKey;	
