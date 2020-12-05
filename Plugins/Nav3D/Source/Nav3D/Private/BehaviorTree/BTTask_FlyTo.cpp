@@ -113,6 +113,17 @@ EBTNodeResult::Type UBTTask_FlyTo::SchedulePathfindingRequest(UBehaviorTreeCompo
 		return HandleTaskFailure(OwnerComp, NodeMemory, blackboard);
 	}
 
+
+	/*
+		CS 380 : black board keys
+	*/
+	int32 algoType = blackboard->GetValueAsInt(AlgorithmType.SelectedKeyName);
+	QueryParams.AlgorithmType = algoType;
+	bool debugDrawClosedList = blackboard->GetValueAsBool(DebugDrawClosedList.SelectedKeyName);
+	bool debugDrawOpenList = blackboard->GetValueAsBool(DebugDrawOpenList.SelectedKeyName);
+	DebugParams.DrawDebugClosedListVolumes = debugDrawClosedList;
+	DebugParams.DrawDebugOpenListVolumes = debugDrawOpenList;
+
 	// Prepare input:
 	myMemory->Reset();	
 	myMemory->Metadata.ActiveInstanceIdx = OwnerComp.GetActiveInstanceIdx();
@@ -124,15 +135,6 @@ EBTNodeResult::Type UBTTask_FlyTo::SchedulePathfindingRequest(UBehaviorTreeCompo
 	FVector flightDestination = blackboard->GetValueAsVector(FlightLocationKey.SelectedKeyName);
 	myMemory->TargetLocation = flightDestination;
 
-	/*
-		CS 380 : black board keys
-	*/
-	int32 algoType = blackboard->GetValueAsInt(AlgorithmType.SelectedKeyName);
-	bool debugDrawClosedList = blackboard->GetValueAsBool(DebugDrawClosedList.SelectedKeyName);
-	bool debugDrawOpenList = blackboard->GetValueAsBool(DebugDrawOpenList.SelectedKeyName);
-	DebugParams.DrawDebugClosedListVolumes = debugDrawClosedList; 
-	DebugParams.DrawDebugOpenListVolumes = debugDrawOpenList;
-
 	// Bind result notification delegate:
 	FDoNNavigationResultHandler resultHandler;
 	resultHandler.BindDynamic(this, &UBTTask_FlyTo::Pathfinding_OnFinish);
@@ -142,7 +144,7 @@ EBTNodeResult::Type UBTTask_FlyTo::SchedulePathfindingRequest(UBehaviorTreeCompo
 
 	// Schedule task:
 	bool bTaskScheduled = false;
-	bTaskScheduled = NavigationManager->SchedulePathfindingTask(pawn, algoType, flightDestination, myMemory->QueryParams, DebugParams, resultHandler, myMemory->DynamicCollisionListener);
+	bTaskScheduled = NavigationManager->SchedulePathfindingTask(pawn, flightDestination, myMemory->QueryParams, DebugParams, resultHandler, myMemory->DynamicCollisionListener);
 
 	if (bTaskScheduled)
 	{
@@ -289,7 +291,7 @@ void UBTTask_FlyTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemor
 		}
 
 		// Move along the path solution towards our goal:
-		TickPathNavigation(OwnerComp, myMemory, DeltaSeconds);
+		//TickPathNavigation(OwnerComp, myMemory, DeltaSeconds);
 
 		break;
 

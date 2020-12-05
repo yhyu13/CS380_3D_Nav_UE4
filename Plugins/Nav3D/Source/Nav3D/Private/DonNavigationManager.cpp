@@ -1898,7 +1898,7 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 	/*
 		CS380 : Theta Star Algorithm
 	*/
-	switch (data.AlgorithmType)
+	switch (data.QueryParams.AlgorithmType)
 	{
 	case 0:
 		// AStar
@@ -2071,7 +2071,7 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 		/*
 			CS380 : Theta Star Algorithm
 		*/
-		switch (data.AlgorithmType)
+		switch (data.QueryParams.AlgorithmType)
 		{
 		case 2:
 			LazyThetaStarRegressByLineOfSight(synchronousTask, currentVolume);
@@ -2132,7 +2132,7 @@ bool ADonNavigationManager::FindPathSolution_StressTesting(AActor* Actor, FVecto
 	return true;
 }
 
-bool ADonNavigationManager::SchedulePathfindingTask(AActor* Actor, int32 AlgorithmType, FVector Destination, UPARAM(ref) const FDoNNavigationQueryParams& QueryParams, UPARAM(ref) const FDoNNavigationDebugParams& DebugParams, FDoNNavigationResultHandler ResultHandlerDelegate, FDonNavigationDynamicCollisionDelegate DynamicCollisionListener)
+bool ADonNavigationManager::SchedulePathfindingTask(AActor* Actor, FVector Destination, UPARAM(ref) const FDoNNavigationQueryParams& QueryParams, UPARAM(ref) const FDoNNavigationDebugParams& DebugParams, FDoNNavigationResultHandler ResultHandlerDelegate, FDonNavigationDynamicCollisionDelegate DynamicCollisionListener)
 {
 	UPrimitiveComponent* CollisionComponent = Actor ? Cast<UPrimitiveComponent>(Actor->GetRootComponent()) : NULL;
 
@@ -2254,10 +2254,6 @@ bool ADonNavigationManager::SchedulePathfindingTask(AActor* Actor, int32 Algorit
 			ResultHandlerDelegate, 
 			DynamicCollisionListener
 		);
-
-	request.Data.AlgorithmType = AlgorithmType;
-	request.Data.QueryStatus = EDonNavigationQueryStatus::InProgress;
-
 	// Schedule this task
 	AddPathfindingTask(request);
 	
@@ -2448,7 +2444,7 @@ void ADonNavigationManager::TickNavigationSolver(FDonNavigationQueryTask& task)
 		// The best neighbor is defined as the node most likely to lead us towards the goal
 		auto currentVolume = data.Frontier.get(); 
 
-		switch (data.AlgorithmType)
+		switch (data.QueryParams.AlgorithmType)
 		{
 		case 2:
 			LazyThetaStarRegressByLineOfSight(task, currentVolume);
@@ -2535,7 +2531,7 @@ FDonNavigationVoxel* ADonNavigationManager::ThetaStarReparentByLineOfSight(FDonN
 		{
 			// Do we have direct access from parent of current to neighbour?
 			FHitResult hitResult;
-			const bool bFindInitialOverlaps = true;
+			const bool bFindInitialOverlaps = false;
 			auto CollisionComponent = Task.Data.CollisionComponent.Get();
 			const auto& Origin = parentCurrent->Location;
 			const auto& Destination = Neighbor->Location;
@@ -2580,7 +2576,7 @@ void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQuer
 		{
 			// Do we have direct access from parent of current to neighbour?
 			FHitResult hitResult;
-			const bool bFindInitialOverlaps = true;
+			const bool bFindInitialOverlaps = false;
 			auto CollisionComponent = data.CollisionComponent.Get();
 			const auto& Origin = parentCurrent->Location;
 			const auto& Destination = currentVolume->Location;
@@ -2589,9 +2585,7 @@ void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQuer
 				// Regress to AStar because line of sight assumption is violated
 				auto neighbors = FindOrSetupNeighborsForVolume(currentVolume);
 				// Remove neighbors that are not in the closed list
-				neighbors.RemoveAll([&data](const auto& item) {
-					return data.VolumeClosedList.Find(item) == nullptr;
-				});
+				neighbors.RemoveAll([&data](const auto& item) { return !data.VolumeClosedList.Contains(item); });
 				if (neighbors.Num() > 0)
 				{
 					std::vector<float> AStarCosts;
@@ -2611,7 +2605,7 @@ void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQuer
 				}
 				else
 				{
-					UE_LOG(DoNNavigationLog, Display, TEXT("%s"), *FString::Printf(TEXT("Regress to Astar Failed!")));
+					UE_LOG(DoNNavigationLog, Error, TEXT("%s"), *FString::Printf(TEXT("Regress to Astar Failed!")));
 				}
 			}
 			else

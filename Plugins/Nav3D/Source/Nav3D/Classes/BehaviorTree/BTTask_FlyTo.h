@@ -104,6 +104,8 @@ public:
 #endif // WITH_EDITOR
 
 	// Behavior Tree Input:
+
+	// CS380 : black board key algorithm
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector AlgorithmType;
 
@@ -114,6 +116,10 @@ public:
 	// CS380 : black board key debug draw open list
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector DebugDrawOpenList;
+
+	// CS380 : black board key flight mode
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
+	FBlackboardKeySelector FlightMode;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "DoN Navigation")
 	FBlackboardKeySelector FlightLocationKey;	

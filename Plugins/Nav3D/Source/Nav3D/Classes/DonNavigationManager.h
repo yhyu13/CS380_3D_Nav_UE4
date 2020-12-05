@@ -230,6 +230,12 @@ struct FDoNNavigationQueryParams
 {
 	GENERATED_USTRUCT_BODY()
 
+	/*
+		CS380 : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DoN Navigation")
+	int32 AlgorithmType = 0;
+
 	/** If a query takes more time to run than the value specified here, the pathfinding task will abort
 	*   This is useful to prevent expensive queries (eg: by passing a destination for which no solution exists)
 	*   from clogging up the pathfinding system
@@ -388,12 +394,6 @@ struct FDoNNavigationQueryData
 	UPROPERTY(BlueprintReadOnly, Category = "DoN Navigation")
 	FDoNNavigationQueryParams QueryParams;
 
-	/*
-		CS380 : 0 - A Star, 1 - Theta Star, 2 - Lazy Theta Star
-	*/
-	UPROPERTY(BlueprintReadOnly, Category = "DoN Navigation")
-	int32 AlgorithmType;
-
 	FDoNNavigationDebugParams DebugParams;
 
 	// Unbound:
@@ -529,7 +529,6 @@ struct FDonNavigationQueryTask : public FDonNavigationTask
 			Data.Frontier.put(InData.OriginVolume, 0);
 			Data.VolumeVsCostMap.Add(InData.OriginVolume, 0);
 		}
-
 		Data.QueryStatus = EDonNavigationQueryStatus::InProgress;
 		RequestType = EDonNavigationRequestType::New;
 	}
@@ -1077,7 +1076,7 @@ public:
 	*/
 
 	UFUNCTION(BlueprintCallable, Category = "DoN Navigation")		
-	bool SchedulePathfindingTask(AActor* Actor, int32 AlgorithmType, FVector Destination, UPARAM(ref) const FDoNNavigationQueryParams& QueryParams, UPARAM(ref) const FDoNNavigationDebugParams& DebugParams, FDoNNavigationResultHandler ResultHandlerDelegate, FDonNavigationDynamicCollisionDelegate DynamicCollisionListener);
+	bool SchedulePathfindingTask(AActor* Actor, FVector Destination, UPARAM(ref) const FDoNNavigationQueryParams& QueryParams, UPARAM(ref) const FDoNNavigationDebugParams& DebugParams, FDoNNavigationResultHandler ResultHandlerDelegate, FDonNavigationDynamicCollisionDelegate DynamicCollisionListener);
 
 	/** Aborts an existing pathfinding task for a given Actor */
 	UFUNCTION(BlueprintCallable, Category = "DoN Navigation")
