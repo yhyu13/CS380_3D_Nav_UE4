@@ -168,18 +168,18 @@ void ADonNavigationManagerUnbound::ExpandFrontierTowardsTarget(FDonNavigationQue
 	if (!CanNavigateByCollisionProfile(Neighbor, Task.Data.VoxelCollisionProfile))
 		return;
 
-	float SegmentDist = VoxelSize;
+	auto SegmentDist = VoxelSize;
 
-	uint32 newCost = *Task.Data.VolumeVsCostMap_Unbound.Find(Current) + SegmentDist;
-	uint32* volumeCost = Task.Data.VolumeVsCostMap_Unbound.Find(Neighbor);
+	auto newCost = *Task.Data.VolumeVsCostMap_Unbound.Find(Current) + SegmentDist;
+	auto* volumeCost = Task.Data.VolumeVsCostMap_Unbound.Find(Neighbor);
 
 	if (!volumeCost || newCost < *volumeCost)
 	{
 		Task.Data.VolumeVsGoalTrajectoryMap_Unbound.Add(Neighbor, Current);
 		Task.Data.VolumeVsCostMap_Unbound.Add(Neighbor, newCost);
 
-		float heuristic = FVector::Dist(Neighbor, Task.Data.Destination);
-		uint32 priority = newCost + heuristic;
+		auto heuristic = FVector::Dist(Neighbor, Task.Data.Destination);
+		auto priority = newCost + heuristic;
 
 		Task.Data.Frontier_Unbound.put(Neighbor, priority);
 	}

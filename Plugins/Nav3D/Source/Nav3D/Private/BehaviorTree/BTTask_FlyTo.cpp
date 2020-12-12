@@ -291,7 +291,7 @@ void UBTTask_FlyTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemor
 			auto end = std::chrono::steady_clock::now();
 			std::chrono::duration<double> elapsed_seconds = end - myMemory->QueryParams.startTime;
 
-			FString sTime = FString::Printf(TEXT("time elapsed to find path: %.4f seconds"), elapsed_seconds.count());
+			FString sTime = FString::Printf(TEXT("Time elapsed to find path: %.4f seconds"), elapsed_seconds.count());
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow,*sTime);
 
 		}

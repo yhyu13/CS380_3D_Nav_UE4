@@ -415,13 +415,15 @@ struct FDoNNavigationQueryData
 	FDonNavigationVoxel* OriginVolume;
 	FDonNavigationVoxel* DestinationVolume;	
 
-	DoNNavigation::PriorityQueue<FDonNavigationVoxel*> Frontier;
+	using priority_t = double;
+
+	DoNNavigation::PriorityQueue<FDonNavigationVoxel*, priority_t> Frontier;
 	TSet<FDonNavigationVoxel*> VolumeClosedList;
-	TMap<FDonNavigationVoxel*, uint32> VolumeVsCostMap;
+	TMap<FDonNavigationVoxel*, priority_t> VolumeVsCostMap;
 	TMap<FDonNavigationVoxel*, FDonNavigationVoxel*> VolumeVsGoalTrajectoryMap;
 
-	DoNNavigation::PriorityQueue<FDonNavigationLocVector> Frontier_Unbound;
-	TMap<FDonNavigationLocVector, uint32> VolumeVsCostMap_Unbound;
+	DoNNavigation::PriorityQueue<FDonNavigationLocVector, priority_t> Frontier_Unbound;
+	TMap<FDonNavigationLocVector, priority_t> VolumeVsCostMap_Unbound;
 	TMap<FDonNavigationLocVector, FDonNavigationLocVector> VolumeVsGoalTrajectoryMap_Unbound;
 
 	// Optimization state variables
@@ -884,6 +886,7 @@ protected:
 
 	// Note:- 26 DOF cannot be directly used for travel as access to (x, y, z) does not guarantee access to (x + 1, y, z + 1) (etc)
 	// unless both (x + 1, y, z) and (x, y, z + 1) are also accessible). In the latter case, such DOFs are referred to as implicit DOFs. 12 such implict DOFs are currently used.
+	// Hang & Lowell : add the additional 8 conrers to the neighbour list, now 20 of such implict DOFs are used
 
 	// 26 DOF table (for reference only)
 	//	   0       1        2        3       4        5        6       7         8       9      10        11     12      13       14      15      16      17      18     19      20     21      22    23        24      25     26

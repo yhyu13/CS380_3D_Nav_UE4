@@ -24,6 +24,8 @@ DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ DynamicCollisionUpdates"),  STAT_Dynami
 DECLARE_CYCLE_STAT(TEXT("DonNavigation ~ DynamicCollisionSampling"), STAT_DynamicCollisionSampling, STATGROUP_DonNavigation);
 
 #define DEBUG_DoNAI_THREADS 1
+#define OPTIMIZE_SEGMENT 1
+#define USE_26_DOFs 1
 
 void FDonNavigationVoxel::BroadcastCollisionUpdates()
 {
@@ -501,6 +503,39 @@ void ADonNavigationManager::AppendImplictDOFNeighborsForVolume(int32 x, int32 y,
 
 		if (CanNavigate(&VolumeAtUnsafe(x - 1, y, z)) && CanNavigate(&VolumeAtUnsafe(x, y - 1, z)))
 			Neighbors.Add(&VolumeAtUnsafe(x - 1, y - 1, z));
+
+#if USE_26_DOFs
+		// The outer 8 corners
+		if (IsValidVolume(x - 1, y - 1, z - 1) && IsValidVolume(x + 1, y - 1, z - 1) && IsValidVolume(x + 1, y + 1, z - 1) && IsValidVolume(x - 1, y + 1, z - 1)
+			&& IsValidVolume(x - 1, y - 1, z + 1) && IsValidVolume(x + 1, y - 1, z + 1) && IsValidVolume(x + 1, y + 1, z + 1) && IsValidVolume(x - 1, y + 1, z + 1))
+		{
+			// z - 1
+			if (CanNavigate(&VolumeAtUnsafe(x - 1, y, z - 1)) && CanNavigate(&VolumeAtUnsafe(x, y - 1, z - 1)))
+				Neighbors.Add(&VolumeAtUnsafe(x - 1, y - 1, z - 1));
+
+			if (CanNavigate(&VolumeAtUnsafe(x + 1, y, z - 1)) && CanNavigate(&VolumeAtUnsafe(x, y - 1, z - 1)))
+				Neighbors.Add(&VolumeAtUnsafe(x + 1, y - 1, z - 1));
+
+			if (CanNavigate(&VolumeAtUnsafe(x + 1, y, z - 1)) && CanNavigate(&VolumeAtUnsafe(x, y + 1, z - 1)))
+				Neighbors.Add(&VolumeAtUnsafe(x + 1, y + 1, z - 1));
+
+			if (CanNavigate(&VolumeAtUnsafe(x - 1, y, z - 1)) && CanNavigate(&VolumeAtUnsafe(x, y + 1, z - 1)))
+				Neighbors.Add(&VolumeAtUnsafe(x - 1, y + 1, z - 1));
+
+			// z + 1
+			if (CanNavigate(&VolumeAtUnsafe(x - 1, y, z + 1)) && CanNavigate(&VolumeAtUnsafe(x, y - 1, z + 1)))
+				Neighbors.Add(&VolumeAtUnsafe(x - 1, y - 1, z + 1));
+
+			if (CanNavigate(&VolumeAtUnsafe(x + 1, y, z + 1)) && CanNavigate(&VolumeAtUnsafe(x, y - 1, z + 1)))
+				Neighbors.Add(&VolumeAtUnsafe(x + 1, y - 1, z + 1));
+
+			if (CanNavigate(&VolumeAtUnsafe(x + 1, y, z + 1)) && CanNavigate(&VolumeAtUnsafe(x, y + 1, z + 1)))
+				Neighbors.Add(&VolumeAtUnsafe(x + 1, y + 1, z + 1));
+
+			if (CanNavigate(&VolumeAtUnsafe(x - 1, y, z + 1)) && CanNavigate(&VolumeAtUnsafe(x, y + 1, z + 1)))
+				Neighbors.Add(&VolumeAtUnsafe(x - 1, y + 1, z + 1));
+		}
+#endif
 	}
 }
 
@@ -1909,18 +1944,22 @@ void ADonNavigationManager::ExpandFrontierTowardsTarget(FDonNavigationQueryTask&
 	}
 
 	// In reality there are two possible segment distances: side and sqrt(2) * side. As a trade-off between accuracy and performance we're assuming all segments to be only equal to the pixel size (majority case are 6-DOF neighbors)
-	float SegmentDist = VoxelSize;// *FDonNavigationVoxel::DistanceL2(*current, *Neighbor);
+#if OPTIMIZE_SEGMENT
+	float SegmentDist = VoxelSize;
+#else
+	float SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*current, *Neighbor);
+#endif
 
-	uint32 newCost = *data.VolumeVsCostMap.Find(current) + SegmentDist;
-	uint32* volumeCost = data.VolumeVsCostMap.Find(Neighbor);
+	auto newCost = *data.VolumeVsCostMap.Find(current) + SegmentDist;
+	auto* volumeCost = data.VolumeVsCostMap.Find(Neighbor);
 
 	if (!volumeCost || newCost < *volumeCost)
 	{
 		data.VolumeVsGoalTrajectoryMap.Add(Neighbor, current);
 		data.VolumeVsCostMap.Add(Neighbor, newCost);
 
-		float heuristic = FVector::Dist(Neighbor->Location, data.Destination);
-		uint32 priority = newCost + heuristic;
+		auto heuristic = FVector::Dist(Neighbor->Location, data.Destination);
+		auto priority = newCost + heuristic;
 
 		data.Frontier.put(Neighbor, priority);
 		if (data.DebugParams.DrawDebugOpenListVolumes)
@@ -2522,7 +2561,7 @@ FDonNavigationVoxel* ADonNavigationManager::ThetaStarReparentByLineOfSight(FDonN
 		{
 			// Do we have direct access from parent of current to neighbour?
 			FHitResult hitResult;
-			const bool bFindInitialOverlaps = false;
+			const bool bFindInitialOverlaps = true;
 			auto CollisionComponent = Task.Data.CollisionComponent.Get();
 			const auto& Origin = parentCurrent->Location;
 			const auto& Destination = Neighbor->Location;
@@ -2567,7 +2606,7 @@ void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQuer
 		{
 			// Do we have direct access from parent of current to neighbour?
 			FHitResult hitResult;
-			const bool bFindInitialOverlaps = false;
+			const bool bFindInitialOverlaps = true;
 			auto CollisionComponent = data.CollisionComponent.Get();
 			const auto& Origin = parentCurrent->Location;
 			const auto& Destination = currentVolume->Location;
@@ -2582,8 +2621,12 @@ void ADonNavigationManager::LazyThetaStarRegressByLineOfSight(FDonNavigationQuer
 					std::vector<float> AStarCosts;
 					for (auto& Neighbor : neighbors)
 					{
-						float SegmentDist = VoxelSize;// *FDonNavigationVoxel::DistanceL2(*currentVolume, *Neighbor);
-						uint32 newCost = *data.VolumeVsCostMap.Find(Neighbor) + SegmentDist;
+#if OPTIMIZE_SEGMENT
+						auto SegmentDist = VoxelSize;
+#else
+						auto SegmentDist = VoxelSize * FDonNavigationVoxel::DistanceL2(*currentVolume, *Neighbor);
+#endif
+						auto newCost = *data.VolumeVsCostMap.Find(Neighbor) + SegmentDist;
 						AStarCosts.push_back(newCost);
 					}
 					auto minArg = std::min_element(AStarCosts.begin(), AStarCosts.end());
@@ -3101,7 +3144,17 @@ void ADonNavigationManager::VisualizeSolution(FVector source, FVector destinatio
 
 	if (DebugParams.VisualizeOptimizedPath)
 	{
-		ADonNavigationManager::VisualizeNAVResult(PathSolutionOptimized, source, destination, true, DebugParams, FColor::Black);
+		// Hang & Lowell : visualize algorithms with different color
+		FColor c;
+		switch (QueryParams.AlgorithmType)
+		{
+		case 0:
+			c = FColor::Black;
+			ADonNavigationManager::VisualizeNAVResult(PathSolutionOptimized, source, destination, true, DebugParams, c);
+			break;
+		default:
+			break;
+		}
 	}
 }
 
