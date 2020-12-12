@@ -3123,38 +3123,82 @@ void ADonNavigationManager::VisualizeSolution(FVector source, FVector destinatio
 {
 	if (DebugParams.VisualizeRawPath)
 	{
+		// Hang & Lowell : calculate total distance 
+		float total_distance = 0;
+		FVector entryPoint = source;
+		FVector previousEntryPoint;
+		for (int32 i = 0; i < PathSolutionRaw.Num(); i++)
+		{
+			previousEntryPoint = entryPoint;
+			entryPoint = PathSolutionRaw[i];
+			total_distance += FVector::Dist(entryPoint, previousEntryPoint);
+		}
+
 		// Hang & Lowell : visualize algorithms with different color
 		FColor c;
+		FString sDist;
 		switch (QueryParams.AlgorithmType)
 		{
 		case 0:
 			c = FColor::Yellow;
+			sDist = FString::Printf(TEXT("Total distance A* raw: %.4f cm"), total_distance);
 			break;
 		case 1:
 			c = FColor::Purple;
+			sDist = FString::Printf(TEXT("Total distance Theta* raw: %.4f cm"), total_distance);
 			break;
 		case 2:
 			c = FColor::Orange;
+			sDist = FString::Printf(TEXT("Total distance Lazy Theta* raw: %.4f cm"), total_distance);
 			break;
 		default:
 			break;
 		}	
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, sDist);
+		}
 		ADonNavigationManager::VisualizeNAVResult(PathSolutionRaw, source, destination, true, DebugParams, c);
 	}
 
 	if (DebugParams.VisualizeOptimizedPath)
 	{
+		// Hang & Lowell : calculate total distance 
+		float total_distance = 0;
+		FVector entryPoint = source;
+		FVector previousEntryPoint;
+		for (int32 i = 0; i < PathSolutionOptimized.Num(); i++)
+		{
+			previousEntryPoint = entryPoint;
+			entryPoint = PathSolutionOptimized[i];
+			total_distance += FVector::Dist(entryPoint, previousEntryPoint);
+		}
+
 		// Hang & Lowell : visualize algorithms with different color
 		FColor c;
+		FString sDist;
 		switch (QueryParams.AlgorithmType)
 		{
 		case 0:
 			c = FColor::Black;
-			ADonNavigationManager::VisualizeNAVResult(PathSolutionOptimized, source, destination, true, DebugParams, c);
+			sDist = FString::Printf(TEXT("Total distance A* optimized: %.4f cm"), total_distance);
+			break;
+		case 1:
+			c = FColor::Purple;
+			sDist = FString::Printf(TEXT("Total distance Theta* optimized: %.4f cm"), total_distance);
+			break;
+		case 2:
+			c = FColor::Orange;
+			sDist = FString::Printf(TEXT("Total distance Lazy Theta* optimized: %.4f cm"), total_distance);
 			break;
 		default:
 			break;
 		}
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, sDist);
+		}
+		ADonNavigationManager::VisualizeNAVResult(PathSolutionOptimized, source, destination, true, DebugParams, c);
 	}
 }
 

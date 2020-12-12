@@ -282,18 +282,34 @@ void UBTTask_FlyTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemor
 
 	case EDonNavigationQueryStatus::Success:
 
-
 		//first success tick
+
+		// Hang & Lowell : print total time to screen
 		if (!myMemory->QueryParams.done)
 		{
 			myMemory->QueryParams.done = true;
-			
+
 			auto end = std::chrono::steady_clock::now();
 			std::chrono::duration<double> elapsed_seconds = end - myMemory->QueryParams.startTime;
-
-			FString sTime = FString::Printf(TEXT("Time elapsed to find path: %.4f seconds"), elapsed_seconds.count());
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow,*sTime);
-
+			FString sTime;
+			switch (myMemory->QueryParams.AlgorithmType)
+			{
+			case 0:
+				sTime = FString::Printf(TEXT("Time elapsed for A*: %.4f seconds"), elapsed_seconds.count());
+				break;
+			case 1:
+				sTime = FString::Printf(TEXT("Time elapsed for Theta*: %.4f seconds"), elapsed_seconds.count());
+				break;
+			case 2:
+				sTime = FString::Printf(TEXT("Time elapsed for Lazy Theta*: %.4f seconds"), elapsed_seconds.count());
+				break;
+			default:
+				break;
+			}
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, sTime);
+			}
 		}
 
 		// Is our path solution no longer valid?
